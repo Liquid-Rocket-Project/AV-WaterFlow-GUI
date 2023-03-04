@@ -1,10 +1,13 @@
 """
+RUN THIS PROGRAM FOR THE GUI
+
 Author: Nick Fan
 Date: 3/4/2023
 Description: Quick GUI to aid in waterflow testing and gain more precise timing.
 Written in one day so please do not judge quality of code LOL.
 """
 
+import os
 import pandas as pd
 import serial
 import serial.tools.list_ports
@@ -77,13 +80,11 @@ class SerialComm():
     
     def setPort(self, newPort: str) -> bool:
         """Set new com port"""
-        try:
+        if os.path.exists(f"/dev/{self.connection.name}"):
             serial.Serial(newPort, self.baudrate)
             self.port = newPort
             return True
-        except serial.SerialException as err:
-            print(err)
-            return False
+        return False
     
     def setBaudrate(self, newBaudrate: int) -> None:
         """Set new baudrate"""
@@ -142,19 +143,22 @@ class WaterFlowGUI(QMainWindow):
         print("Closing window.")
         self.serialCon.close()
 
-    def _sendSerial(self, input: str) -> None:
+    def _sendSerial(self, input: str) -> bool:
         """Writes to serial port."""
-        message = QDateTime.currentDateTime().toString(DATE_TIME_FORMAT)
-        message += input
-        repeat = False
-        if len(set(input)) != len(input):
-            message += " -- Repeat detected, try again"
-            repeat = True
-        self.line.clear()
-        self.monitor.append(message)
-        if not repeat: 
-            if not self.serialCon.sendMessage(input):
-                self.createMessageBox(ERROR, "COM unavailable for sending.")
+        if os.path.exists(f"/dev/{self.serialCon.connection.name}"):
+            message = QDateTime.currentDateTime().toString(DATE_TIME_FORMAT)
+            message += input
+            repeat = False
+            if len(set(input)) != len(input):
+                message += " -- Repeat detected, try again"
+                repeat = True
+            self.line.clear()
+            self.monitor.append(message)
+            if not repeat: 
+                if not self.serialCon.sendMessage(input):
+                    self.createMessageBox(ERROR, "COM unavailable for sending.")
+            return True
+        return False
 
     def _readSerial(self) -> bool:
         """Reads from serial port."""
@@ -171,10 +175,13 @@ class WaterFlowGUI(QMainWindow):
             )
         return True
 
-    def _sendReceiveOnEnter(self):
+    def _sendReceiveOnEnter(self) -> None:
         """Signal for input line receiver enter."""
-        self._sendSerial(self.line.text())
-        self._readSerial()
+        sent = self._sendSerial(self.line.text())
+        if sent:
+            self._readSerial()
+        else:
+            self.createMessageBox(ERROR, "COM port is not available.")
 
     def _createInputLine(self) -> None:
         """Create input line for sending commands."""
@@ -214,13 +221,16 @@ class WaterFlowGUI(QMainWindow):
             self.createMessageBox(ERROR, "Must set preset time as a number (seconds).")
             return
 
-        self._presetSendReceive()
-        self.inPreset = True
-        self.timeInterval.setReadOnly(True)
-        self.toggledPins.setReadOnly(True)
-        self.testName.setReadOnly(True)
-        self.measurementUnits.setReadOnly(True)
-        self.presetCounter.start(1000 * presetTime)
+        if os.path.exists(f"/dev/{self.serialCon.connection.name}"):
+            self._presetSendReceive()
+            self.inPreset = True
+            self.timeInterval.setReadOnly(True)
+            self.toggledPins.setReadOnly(True)
+            self.testName.setReadOnly(True)
+            self.measurementUnits.setReadOnly(True)
+            self.presetCounter.start(1000 * presetTime)
+        else:
+            self.createMessageBox(ERROR, "COM port is not available.")
 
     def _cancelPreset(self) -> None:
         """Cancels current preset run."""
@@ -314,6 +324,6 @@ if __name__ == "__main__":
     waterflowDisplay.show()
     WaterFlowGUI.createMessageBox(
         WARNING, 
-        "Make sure to plugin devices prior to program start.\n(Or bad things will happen.)"
+        "Make sure to plug in devices prior to program start."
     )
     sys.exit(app.exec())

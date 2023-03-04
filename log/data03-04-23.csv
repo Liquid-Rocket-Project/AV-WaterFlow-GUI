@@ -1,15 +1,10 @@
 ,0
-Test Name,Test All Valves
+Test Name,Test All Pins
 Pins Toggled,12345
-Time Interval (s),4
+Time Interval (s),2
 Measurement (n/a),0.0
 ,0
-Test Name,Fuel Line 50 PSI
-Pins Toggled,1
-Time Interval (s),2
-Measurement (lb),2.1
-,0
-Test Name,Ox Line 50 PSI
-Pins Toggled,2
-Time Interval (s),2
-Measurement (lb),2.4
+Test Name,1
+Pins Toggled,11
+Time Interval (s),1
+Measurement (1),0.0
