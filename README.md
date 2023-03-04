@@ -14,4 +14,6 @@ Waterflow GUI to aid in streamlining testing procedures.
 Note: Logging is currently only available when using preset tests. Full system logging may be implemented in the future.
 Additionally, make sure your devices (like your Arduino Nano) plugged in prior to starting the program, as live COM port checking has not been implemented yet.
 
+Other than that, future points of work also include: calculations, better csv formatting, etc.
+
 Feel free to reach out to me (Nick Fan, nfan17) if you have any questions or need help.
