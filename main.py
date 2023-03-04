@@ -216,16 +216,13 @@ class WaterFlowGUI(QMainWindow):
             self.createMessageBox(ERROR, "Must set preset time as a number (seconds).")
             return
 
-        if os.path.exists(f"/dev/{self.serialCon.connection.name}"):
-            self._presetSendReceive()
-            self.inPreset = True
-            self.timeInterval.setReadOnly(True)
-            self.toggledPins.setReadOnly(True)
-            self.testName.setReadOnly(True)
-            self.measurementUnits.setReadOnly(True)
-            self.presetCounter.start(1000 * presetTime)
-        else:
-            self.createMessageBox(ERROR, "COM port is not available.")
+        self._presetSendReceive()
+        self.inPreset = True
+        self.timeInterval.setReadOnly(True)
+        self.toggledPins.setReadOnly(True)
+        self.testName.setReadOnly(True)
+        self.measurementUnits.setReadOnly(True)
+        self.presetCounter.start(1000 * presetTime)
 
     def _cancelPreset(self) -> None:
         """Cancels current preset run."""
