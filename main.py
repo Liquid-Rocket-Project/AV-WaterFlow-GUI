@@ -81,8 +81,9 @@ class SerialComm():
     def setPort(self, newPort: str) -> bool:
         """Set new com port"""
         if os.path.exists(f"/dev/{self.connection.name}"):
-            serial.Serial(newPort, self.baudrate)
-            self.port = newPort
+            self.connection = serial.Serial(newPort, self.baudrate)
+            if not self.connection.is_open:
+                self.connection.open()
             return True
         return False
     
@@ -143,22 +144,19 @@ class WaterFlowGUI(QMainWindow):
         print("Closing window.")
         self.serialCon.close()
 
-    def _sendSerial(self, input: str) -> bool:
+    def _sendSerial(self, input: str) -> None:
         """Writes to serial port."""
-        if os.path.exists(f"/dev/{self.serialCon.connection.name}"):
-            message = QDateTime.currentDateTime().toString(DATE_TIME_FORMAT)
-            message += input
-            repeat = False
-            if len(set(input)) != len(input):
-                message += " -- Repeat detected, try again"
-                repeat = True
-            self.line.clear()
-            self.monitor.append(message)
-            if not repeat: 
-                if not self.serialCon.sendMessage(input):
-                    self.createMessageBox(ERROR, "COM unavailable for sending.")
-            return True
-        return False
+        message = QDateTime.currentDateTime().toString(DATE_TIME_FORMAT)
+        message += input
+        repeat = False
+        if len(set(input)) != len(input):
+            message += " -- Repeat detected, try again"
+            repeat = True
+        self.line.clear()
+        self.monitor.append(message)
+        if not repeat: 
+            if not self.serialCon.sendMessage(input):
+                self.createMessageBox(ERROR, "COM unavailable for sending.")
 
     def _readSerial(self) -> bool:
         """Reads from serial port."""
@@ -177,11 +175,8 @@ class WaterFlowGUI(QMainWindow):
 
     def _sendReceiveOnEnter(self) -> None:
         """Signal for input line receiver enter."""
-        sent = self._sendSerial(self.line.text())
-        if sent:
-            self._readSerial()
-        else:
-            self.createMessageBox(ERROR, "COM port is not available.")
+        self._sendSerial(self.line.text())
+        self._readSerial()
 
     def _createInputLine(self) -> None:
         """Create input line for sending commands."""
@@ -259,27 +254,24 @@ class WaterFlowGUI(QMainWindow):
         df = df.transpose()
         date = QDateTime.currentDateTime().toString("MM-dd-yy")
         df.to_csv(f"./log/data{date}.csv", mode='a')
-
-    def _refreshPorts(self) -> None:
-        """Refreshes COM ports."""
-        self.ports = [info for info in QtSerialPort.QSerialPortInfo.availablePorts()]
-        self.comSelect.clear()
-        self.comSelect.addItems(ports.portName() for ports in self.ports)
     
     def _comPortChange(self) -> None:
         """Change COM port on combo box change."""
         changed = self.serialCon.setPort(self.comSelect.currentText())
         if not changed:
             self.createMessageBox(ERROR, "COM port is unavailable.")
+            self.comSelect.setCurrentText(self.ports[0].portName())
         else:
             self.monitor.append(f"COM Port Selection: {self.serialCon.port}")
-            self._refreshPorts()
 
     def _createSettingsBox(self) -> None:
         """Create right side settings layout."""
+        # area setup
         self.settings = QGridLayout()
         title = QLabel("Presets: ")
         topSpacer = QSpacerItem(10, 200)
+
+        # input boxes
         self.timeInterval = QLineEdit()
         self.timeInterval.setMaximumHeight(LINE_HEIGHT)
         self.timeInterval.setMaximumWidth(SETTING_WIDTH)
@@ -292,15 +284,21 @@ class WaterFlowGUI(QMainWindow):
         self.testName = QLineEdit()
         self.testName.setMaximumHeight(LINE_HEIGHT)
         self.testName.setMaximumWidth(SETTING_WIDTH)
+
+        # input buttons
         self.startPresetButton = QPushButton("Start Preset (Toggle, Wait, Toggle)")
         self.startPresetButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.startPresetButton.clicked.connect(self._presetRun)
         self.cancelPresetButton = QPushButton("Cancel Preset")
         self.cancelPresetButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.cancelPresetButton.clicked.connect(self._cancelPreset)
+
+        # com selection combo box
         self.comSelect = QComboBox()
         self.comSelect.addItems(ports.portName() for ports in self.ports)
-        self.comSelect.currentTextChanged.connect(self._comPortChange)
+        self.comSelect.textActivated.connect(self._comPortChange)
+
+        # settings layout
         self.settings.addItem(topSpacer, 0, 0)
         self.settings.addWidget(title, 1, 0)
         self.settings.addWidget(QLabel("Interval (sec): "), 2, 0)
