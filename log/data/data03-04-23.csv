@@ -1,50 +1,15 @@
 ,0
-Test Name,Test All Pins
+Fuel Line 50PSI,
+Pins Toggled,1
+Time Interval (s),5
+Measurement (lb),2.3451
+,0
+Ox Line 50PSI,
+Pins Toggled,2
+Time Interval (s),5
+Measurement (lb),1.45
+,0
+All Pins Test,
 Pins Toggled,12345
 Time Interval (s),2
-Measurement (n/a),0.0
-,0
-Test Name,1
-Pins Toggled,11
-Time Interval (s),1
-Measurement (1),0.0
-,0
-Test Name,Test Pins
-Pins Toggled,12345
-Time Interval (s),1
-Measurement (n/a),0.0
-,0
-Test Name,Fuel Line 50 PSI
-Pins Toggled,1
-Time Interval (s),1
-Measurement (lb),2.3
-,0
-Test Name,Ox Line 100 PSI
-Pins Toggled,2
-Time Interval (s),3
-Measurement (lb),2.4
-,0
-Test Name,1
-Pins Toggled,1
-Time Interval (s),1
-Measurement (1),2.345
-,0
-Test Name,All Pins
-Pins Toggled,12345
-Time Interval (s),1
 Measurement (n/a),n/a
-,0
-Test Name,All Pins
-Pins Toggled,1
-Time Interval (s),10
-Measurement (n/a),n/a
-,0
-Test Name,All Pins
-Pins Toggled,1
-Time Interval (s),10
-Measurement (n/a),
-,0
-Test Name,Both Lines 0 PSI
-Pins Toggled,12
-Time Interval (s),5
-Measurement (lb),forgot bucket

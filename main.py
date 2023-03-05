@@ -262,14 +262,14 @@ class WaterFlowGUI(QMainWindow):
             "Please enter your data:"
         )
         print(measurement)
-        dataDict["Test Name"].append(self.testName.text())
+        dataDict[f"{self.testName.text()}"].append("")
         dataDict["Pins Toggled"].append(self.toggledPins.text())
         dataDict["Time Interval (s)"].append(self.timeInterval.text())
         dataDict[f"Measurement ({self.measurementUnits.text()})"].append(measurement)
         df = pd.DataFrame.from_dict(dataDict, "columns")
         df = df.transpose()
         df.to_csv(f"./log/data/data{DATE}.csv", mode='a')
-    
+
     def _comPortChange(self) -> None:
         """Change COM port on combo box change."""
         changed = self.serialCon.setPort(self.comSelect.currentText())
