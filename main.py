@@ -253,7 +253,7 @@ class WaterFlowGUI(QMainWindow):
             )
             self._presetSendReceive()
 
-    def _logPreset(self):
+    def _logPreset(self) -> None:
         """Asks for data to log after a preset run."""
         dataDict = defaultdict(list)
         measurement, ok = QInputDialog().getText(
@@ -261,7 +261,8 @@ class WaterFlowGUI(QMainWindow):
             "Data Input", 
             "Please enter your data:"
         )
-        print(measurement)
+        if not ok:
+            return
         dataDict[f"{self.testName.text()}"].append("")
         dataDict["Pins Toggled"].append(self.toggledPins.text())
         dataDict["Time Interval (s)"].append(self.timeInterval.text())

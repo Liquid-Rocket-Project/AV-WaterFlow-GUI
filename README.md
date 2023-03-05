@@ -16,4 +16,7 @@ Additionally, make sure your devices (like your Arduino Nano) plugged in prior t
 
 Other than that, future points of work also include: calculations, better csv formatting, etc.
 
+## GUI Layout
+https://github.com/Liquid-Rocket-Project/AV-WaterFlow-GUI/blob/main/src/GUIexample.png?raw=true
+
 Feel free to reach out to me (Nick Fan, nfan17) if you have any questions or need help.
