@@ -15,6 +15,9 @@ import sys
 import time
 
 from collections import defaultdict
+from PyQt6 import QtSerialPort
+from PyQt6.QtCore import Qt, QTimer, QDateTime
+from PyQt6.QtGui import QIcon
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -31,10 +34,6 @@ from PyQt6.QtWidgets import (
     QInputDialog
 )
 
-from PyQt6 import QtSerialPort
-from PyQt6.QtCore import Qt, QTimer, QDateTime
-from PyQt6.QtGui import QIcon
-
 # CONSTANTS -------------------------------------------------------------------|
 MIN_SIZE = 500
 LINE_HEIGHT = 35
@@ -48,6 +47,8 @@ BAUDRATE = 9600
 WARNING = 0
 ERROR = 1
 MESSAGE_LABELS = ("Warning", "Error")
+DATE = QDateTime.currentDateTime().toString("MM-dd-yy")
+USB_NAME = "USB-SERIAL CH340"
 
 # HELPER CLASS -----------------------------------------------------------------|
 class SerialComm():
@@ -56,7 +57,7 @@ class SerialComm():
     def __init__(self, com: str, baudrate: int):
         self.port = com
         self.baudrate = baudrate
-        self.connection = serial.Serial(self.port, self.baudrate, timeout=0.1)
+        self.connection = serial.Serial(self.port, self.baudrate, timeout=0.05)
     
     def receiveMessage(self):
         """Read from serial com if there is data in."""
@@ -80,6 +81,7 @@ class SerialComm():
     
     def setPort(self, newPort: str) -> bool:
         """Set new com port"""
+        # this doesn't really work as intended, on a windows device currently
         if os.path.exists(f"/dev/{self.connection.name}"):
             self.connection = serial.Serial(newPort, self.baudrate)
             if not self.connection.is_open:
@@ -127,6 +129,11 @@ class WaterFlowGUI(QMainWindow):
         self._createDisplayArea()
         self._createSettingsBox()
 
+        self._logSystem(
+            "NEW SESSION: " 
+            + QDateTime.currentDateTime().toString("hh:mm:ss")
+        )
+
     @staticmethod
     def createMessageBox(boxType: int, message: str) -> None:
         """Creates error message popup with indicated message."""
@@ -138,11 +145,25 @@ class WaterFlowGUI(QMainWindow):
         box.setWindowTitle(MESSAGE_LABELS[boxType])
         box.setText(f"{MESSAGE_LABELS[boxType]}: {message}")
         box.exec()
+    
+    def checkPortsOk(self) -> bool:
+        """Checks for serial connection."""
+        if self.ports[0].description() != USB_NAME:
+            self.createMessageBox(ERROR, "No USB Serial detected.\nPlease check your connection first.")
+            self.close()
+            return False
+        return True
 
     def closeEvent(self, event) -> None:
         """Adds additional functions when closing window."""
-        print("Closing window.")
-        self.serialCon.close()
+        self._logSystem("-------------------")
+        if self.serialCon:
+            self.serialCon.close()
+    
+    def _logSystem(self, entry: str) -> None:
+        """Log serial monitor activity to text file."""
+        with open(f"./log/system/system{DATE}.txt", "a") as sysLog:
+            sysLog.write(entry + "\n")
 
     def _sendSerial(self, input: str) -> None:
         """Writes to serial port."""
@@ -154,24 +175,23 @@ class WaterFlowGUI(QMainWindow):
             repeat = True
         self.line.clear()
         self.monitor.append(message)
+        self._logSystem(message)
         if not repeat: 
             if not self.serialCon.sendMessage(input):
                 self.createMessageBox(ERROR, "COM unavailable for sending.")
 
-    def _readSerial(self) -> bool:
+    def _readSerial(self) -> None:
         """Reads from serial port."""
         response = self.serialCon.receiveMessage()
         if response:
             response = response.strip("\n").split("\n")
         else:
             response = ("No response",)
-            return False
         for line in response:
             self.monitor.append(
                 QDateTime.currentDateTime().toString(DATE_TIME_FORMAT) 
                 + line
             )
-        return True
 
     def _sendReceiveOnEnter(self) -> None:
         """Signal for input line receiver enter."""
@@ -232,12 +252,11 @@ class WaterFlowGUI(QMainWindow):
                 + "Preset run aborted. Toggling pins."
             )
             self._presetSendReceive()
-            self._exitPreset()
 
     def _logPreset(self):
         """Asks for data to log after a preset run."""
         dataDict = defaultdict(list)
-        measurement, ok = QInputDialog().getDouble(
+        measurement, ok = QInputDialog().getText(
             self.centralWidget(),
             "Data Input", 
             "Please enter your data:"
@@ -249,8 +268,7 @@ class WaterFlowGUI(QMainWindow):
         dataDict[f"Measurement ({self.measurementUnits.text()})"].append(measurement)
         df = pd.DataFrame.from_dict(dataDict, "columns")
         df = df.transpose()
-        date = QDateTime.currentDateTime().toString("MM-dd-yy")
-        df.to_csv(f"./log/data{date}.csv", mode='a')
+        df.to_csv(f"./log/data/data{DATE}.csv", mode='a')
     
     def _comPortChange(self) -> None:
         """Change COM port on combo box change."""
@@ -317,8 +335,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     waterflowDisplay = WaterFlowGUI()
     waterflowDisplay.show()
-    WaterFlowGUI.createMessageBox(
-        WARNING, 
-        "Make sure to plug in devices prior to program start."
-    )
+    if not waterflowDisplay.checkPortsOk():
+        sys.exit(1)
     sys.exit(app.exec())
