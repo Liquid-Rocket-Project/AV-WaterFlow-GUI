@@ -1,6 +1,8 @@
 # AV-WaterFlow-GUI
 Waterflow GUI with basic serial terminal functions to aid in streamlining testing procedures.
 
+-- NOW DEPRECATED --
+
 ## Dependencies and Running
 - Make sure you have Python installed. 
 - Make sure you have pip, or any package manager you are familiar with.
